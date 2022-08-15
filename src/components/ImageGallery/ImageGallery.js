@@ -5,21 +5,16 @@ import { useState, useEffect } from 'react';
 import { getImages } from '../../API/getImages';
 import ImageGalleryItem from '../ImageGalleryItem/ImageGalleryItem';
 import Button from '../Button/Button';
-import Modal from '../Modal/Modal';
 import Spinner from '../Spinner/Spinner';
 
-const ImageGallery = ({ request, page, onLoadMore }) => {
+const ImageGallery = ({ request, page, onLoadMore, onOpenModal }) => {
   const [items, setItems] = useState({
     cards: [],
     loading: false,
     error: null,
   });
   const [totalPages, setTotalPages] = useState(0);
-  const [modal, setModal] = useState({
-    modalContent: '',
-    description: '',
-    isOpen: false,
-  });
+
   useEffect(() => {
     toast.success(`Welcome !!!`, {
       position: 'bottom-center',
@@ -81,25 +76,13 @@ const ImageGallery = ({ request, page, onLoadMore }) => {
     }
   }, [page, request]);
 
-  const closeModal = () => {
-    setModal({ ...modal, isOpen: false });
-  };
-
-  const openModal = (url, tags) => {
-    // const { cards } = items;
-    // const card = cards.find(({ id }) => id === cardId);
-    // console.log('cards: ', cards);
-    // console.log('card: ', card);
-    setModal({
-      modalContent: url,
-      description: tags,
-      isOpen: true,
-    });
-  };
   const { cards, loading, error } = items;
-  const { modalContent, description, isOpen } = modal;
   const elements = cards.map(element => (
-    <ImageGalleryItem key={element.id} {...element} onClickImage={openModal} />
+    <ImageGalleryItem
+      key={element.id}
+      {...element}
+      onClickImage={onOpenModal}
+    />
   ));
   const buttonVision = cards.length > 0 && page < totalPages && !loading;
   return (
@@ -111,12 +94,6 @@ const ImageGallery = ({ request, page, onLoadMore }) => {
           <ul className={s.gallery}>{elements}</ul>
           {buttonVision && <Button onLoadMore={onLoadMore} title="Load more" />}
           {loading && <Spinner />}
-
-          {isOpen && (
-            <Modal onClose={closeModal}>
-              <img src={modalContent} alt={description} />
-            </Modal>
-          )}
         </>
       )}
     </>
@@ -127,6 +104,7 @@ ImageGallery.propTypes = {
   request: PropTypes.string.isRequired,
   page: PropTypes.number.isRequired,
   onLoadMore: PropTypes.func.isRequired,
+  onOpenModal: PropTypes.func.isRequired,
 };
 
 export default ImageGallery;

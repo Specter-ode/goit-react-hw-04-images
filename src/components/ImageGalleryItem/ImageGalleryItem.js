@@ -20,6 +20,7 @@ ImageGalleryItem.propTypes = {
   id: PropTypes.number.isRequired,
   tags: PropTypes.string.isRequired,
   webformatURL: PropTypes.string.isRequired,
+  largeImageURL: PropTypes.string.isRequired,
   onClickImage: PropTypes.func.isRequired,
 };
 
