@@ -17,9 +17,12 @@ const Modal = ({ onClose, children }) => {
     }
   };
   useEffect(() => {
-    document.addEventListener('keydown', closeByEsc);
-    return () => document.removeEventListener('keydown', closeByEsc);
-  }, [closeByEsc]);
+    console.log('test1');
+    window.addEventListener('keydown', closeByEsc);
+    return () => {
+      window.removeEventListener('keydown', closeByEsc);
+    };
+  });
 
   return createPortal(
     <div className={s.overlay} onClick={onClickBackdrop}>
