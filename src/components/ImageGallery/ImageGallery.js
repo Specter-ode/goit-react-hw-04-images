@@ -1,130 +1,132 @@
 import s from './ImageGallery.module.css';
 import PropTypes from 'prop-types';
 import { toast } from 'react-toastify';
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { getImages } from '../../API/getImages';
 import ImageGalleryItem from '../ImageGalleryItem/ImageGalleryItem';
 import Button from '../Button/Button';
 import Modal from '../Modal/Modal';
 import Spinner from '../Spinner/Spinner';
 
-export default class ImageGallery extends Component {
-  state = {
+const ImageGallery = ({ request, page, onLoadMore }) => {
+  const [items, setItems] = useState({
     cards: [],
-    totalPages: '',
-    modalContent: '',
-    description: '',
     loading: false,
     error: null,
-    showModal: false,
-    pageNumber: 1,
-  };
-  componentDidMount() {
+  });
+  const [totalPages, setTotalPages] = useState(0);
+  const [modal, setModal] = useState({
+    modalContent: '',
+    description: '',
+    isOpen: false,
+  });
+  useEffect(() => {
     toast.success(`Welcome !!!`, {
       position: 'bottom-center',
       theme: 'dark',
     });
-  }
-  componentDidUpdate(prevProps, prevState) {
-    const newRequest = this.props.request;
-    const newPageNumber = this.state.pageNumber;
-    if (newRequest !== prevProps.request) {
-      this.setState({ cards: [], totalPages: '', pageNumber: 1 });
-      this.fetchImages(1);
+  }, []);
+  useEffect(() => {
+    const fetchImages = async () => {
+      setItems(prevItems => ({
+        ...prevItems,
+        loading: true,
+        error: null,
+      }));
+      try {
+        const { hits, totalHits } = await getImages(request, page);
+        const total = Math.ceil(totalHits / 12);
+        setItems(prevItems => ({
+          ...prevItems,
+          cards: [...prevItems.cards, ...hits],
+          loading: false,
+        }));
+        setTotalPages(total);
+        if (totalHits === 0) {
+          toast.error(`Nothing found, try again`, {
+            theme: 'colored',
+          });
+        }
+        if (totalHits !== 0 && page === 1) {
+          toast.info(`Find ${totalHits}image/${total}pages`, {
+            theme: 'colored',
+          });
+        }
+        if (page > 1 && page === total) {
+          toast.warn(`This is last page. Make new search`, {
+            theme: 'colored',
+          });
+        }
+      } catch (error) {
+        toast.error('Something wrong, try again later!', {
+          theme: 'colored',
+        });
+        setItems(prevItems => ({
+          ...prevItems,
+          loading: false,
+          error: error.message,
+        }));
+      }
+    };
+    if (page > 1) {
+      fetchImages();
       return;
     }
-    if (newPageNumber > prevState.pageNumber) {
-      this.fetchImages(newPageNumber);
+    if (request) {
+      setItems(prevItems => ({
+        ...prevItems,
+        cards: [],
+      }));
+      fetchImages();
     }
-  }
+  }, [page, request]);
 
-  async fetchImages(pageNumber) {
-    this.setState({
-      loading: true,
-      error: false,
-    });
-    const { request } = this.props;
-    // const { pageNumber } = this.state;
-    try {
-      const { hits, totalHits } = await getImages(request, pageNumber);
-      const total = Math.ceil(totalHits / 12);
-      this.setState(({ cards }) => {
-        return { cards: [...cards, ...hits], totalPages: total };
-      });
-      if (totalHits === 0) {
-        toast.error(`Nothing found, try again`, {
-          theme: 'colored',
-        });
-      }
-      if (totalHits !== 0 && pageNumber === 1) {
-        toast.info(`Find ${totalHits}image/${total}pages`, {
-          theme: 'colored',
-        });
-      }
-      if (pageNumber > 1 && pageNumber === total) {
-        toast.warn(`This is last page. Make new search`, {
-          theme: 'colored',
-        });
-      }
-    } catch (error) {
-      toast.error('Something wrong, try again later!', {
-        theme: 'colored',
-      });
-      this.setState({
-        error: error.message,
-      });
-    } finally {
-      this.setState({ loading: false });
-    }
-  }
-
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
   };
 
-  setModalContent = cardId => {
-    const { cards } = this.state;
-    const card = cards.find(({ id }) => id === cardId);
-    this.setState({
-      modalContent: card.largeImageURL,
-      description: card.tags,
-      showModal: true,
+  const openModal = (url, tags) => {
+    // const { cards } = items;
+    // const card = cards.find(({ id }) => id === cardId);
+    // console.log('cards: ', cards);
+    // console.log('card: ', card);
+    setModal({
+      modalContent: url,
+      description: tags,
+      isOpen: true,
     });
   };
-  onLoadMoreInGallery = () => {
-    this.setState(({ pageNumber }) => ({
-      pageNumber: pageNumber + 1,
-    }));
-  };
-  render() {
-    const { cards, loading, modalContent, description, showModal, totalPages } = this.state;
-    // const { setModalContent, toggleModal } = this;
-    // const { pageNumber, onLoadMoreInGallery } = this.props;
-    const { setModalContent, toggleModal, onLoadMoreInGallery } = this;
-    const { pageNumber } = this.state;
-    const elements = cards.map(element => (
-      <ImageGalleryItem key={element.id} {...element} onClickImage={setModalContent} />
-    ));
-    const buttonVision = cards.length > 0 && pageNumber < totalPages && !loading;
-    return (
-      <>
-        <ul className={s.gallery}>{elements}</ul>
-        {buttonVision && <Button onLoadMoreInButton={onLoadMoreInGallery} title="Load more" />}
-        {showModal && (
-          <Modal onClose={toggleModal}>
-            <img src={modalContent} alt={description} />
-          </Modal>
-        )}
-        {loading && <Spinner />}
-      </>
-    );
-  }
-}
+  const { cards, loading, error } = items;
+  const { modalContent, description, isOpen } = modal;
+  const elements = cards.map(element => (
+    <ImageGalleryItem key={element.id} {...element} onClickImage={openModal} />
+  ));
+  const buttonVision = cards.length > 0 && page < totalPages && !loading;
+  return (
+    <>
+      {error ? (
+        <p> Sorry, some trouble. Try again later</p>
+      ) : (
+        <>
+          <ul className={s.gallery}>{elements}</ul>
+          {buttonVision && <Button onLoadMore={onLoadMore} title="Load more" />}
+          {loading && <Spinner />}
+
+          {isOpen && (
+            <Modal onClose={closeModal}>
+              <img src={modalContent} alt={description} />
+            </Modal>
+          )}
+        </>
+      )}
+    </>
+  );
+};
 
 ImageGallery.propTypes = {
   request: PropTypes.string.isRequired,
-  // pageNumber: PropTypes.number.isRequired,
-  // onLoadMoreInGallery: PropTypes.func.isRequired,
+  page: PropTypes.number.isRequired,
+  onLoadMore: PropTypes.func.isRequired,
 };
+
+export default ImageGallery;

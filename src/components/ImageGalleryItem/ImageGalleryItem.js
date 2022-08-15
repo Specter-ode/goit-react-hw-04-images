@@ -2,7 +2,7 @@ import s from './ImageGalleryItem.module.css';
 import PropTypes from 'prop-types';
 
 const ImageGalleryItem = props => {
-  const { id, webformatURL, tags, onClickImage } = props;
+  const { id, webformatURL, tags, onClickImage, largeImageURL } = props;
 
   return (
     <li className={s.imageGalleryItem} key={id}>
@@ -10,7 +10,7 @@ const ImageGalleryItem = props => {
         className={s.imageGalleryItem__image}
         src={webformatURL}
         alt={tags}
-        onClick={() => onClickImage(id)}
+        onClick={() => onClickImage(largeImageURL, tags)}
       />
     </li>
   );

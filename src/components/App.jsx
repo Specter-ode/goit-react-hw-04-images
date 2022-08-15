@@ -1,31 +1,33 @@
 import s from './App.module.css';
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import { ToastContainer } from 'react-toastify';
 import ImageGallery from './ImageGallery/ImageGallery';
 import SearchBar from './SearchBar/SearchBar';
 import 'react-toastify/dist/ReactToastify.css';
 
-export default class App extends Component {
-  state = {
-    searchValueInApp: '',
+const App = () => {
+  const [query, setQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const handleFormSubmit = searchValue => {
+    setQuery(searchValue);
+    setCurrentPage(1);
+  };
+  const onLoadMore = () => {
+    setCurrentPage(prevPage => prevPage + 1);
   };
 
-  handleFormSubmit = searchValueInApp => {
-    this.setState({ searchValueInApp });
-  };
+  return (
+    <div className={s.app}>
+      <SearchBar onClickSubmit={handleFormSubmit} />
+      <ImageGallery
+        request={query}
+        page={currentPage}
+        onLoadMore={onLoadMore}
+      />
+      <ToastContainer autoClose={2500} hideProgressBar />
+    </div>
+  );
+};
 
-  render() {
-    const { searchValueInApp } = this.state;
-    return (
-      <div className={s.app}>
-        <SearchBar onClickSubmit={this.handleFormSubmit} />
-        <ImageGallery
-          request={searchValueInApp}
-          // pageNumber={page}
-          // onLoadMoreInGallery={this.onLoadMoreInApp}
-        />
-        <ToastContainer autoClose={2500} hideProgressBar />
-      </div>
-    );
-  }
-}
+export default App;
